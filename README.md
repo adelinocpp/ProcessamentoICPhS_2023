@@ -32,12 +32,12 @@ https://www.fon.hum.uva.nl/praat/manual/Spectrum__Get_centre_of_gravity___.html
 
 Utiliza silabificação do Pɛtɾʊs (PhonEtic TRanscriber for User Support), com alterações, originalmente desenvolvido por:
 
-[alessandrobokan](https://github.com/alessandrobokan)
+[alessandrobokan](https://github.com/alessandrobokan) (Obrigado. Desculpa se te divulguei sem permissão.)
 
 e-mail: alessandro.bokan@gmail.com
 
 github Pɛtɾʊs PT-BR: https://github.com/alessandrobokan/PETRUS
 
-Obrigado. Desculpa se te divulguei sem permissão.
+
 ---
 
