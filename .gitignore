@@ -1,0 +1,6 @@
+.spyproject
+Checks.txt
+csvDataAudios.csv
+*/__pycache__/*
+__pycache__/
+*.pyc
