@@ -10,7 +10,7 @@ Data: 28/12/2022 (Lula já eleito)
 
 Autor: Adelino P. Silva
 
-mail: adelinocpp@gmail.com, adelinocpp@gmail.com, adelino@ufmg.br
+mail: adelinocpp@yahoo.com, adelinocpp@gmail.com, adelino@ufmg.br
 
 tel: +55 31 98801-3605
 
