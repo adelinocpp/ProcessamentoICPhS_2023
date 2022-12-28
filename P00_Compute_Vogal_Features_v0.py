@@ -48,7 +48,6 @@ def getMeanPercentualInterval(variable,pIni,pFim):
     return np.mean(variable[nIni:nFim])
 # -----------------------------------------------------------------------------
 def is_ditongo(strVogal):
-    # vogal = ('a','e','i','o','u','A','E','I','O','U')
     vogal_ext = ('a','e','i','o','u','A','E','I','O','U','ã','â','à','á',
                  'Ã','Â','À','Á','é','ê','É','Ê','í','Í','ó','õ','ô','Ó','Õ','Ô',
                  'ú','ü','Ú','Ü')
@@ -62,8 +61,6 @@ def tag_to_bass_vowel(tag, idTag):
     listConsoante = ['b','c','d','f','g','h','j','k','l','m','n','p','q','r',
                      's','t','v','w','x','y','z']
     vogal_bas = np.array(['a','e','i','o','u'])
-    # vogal_gra = np.array(['a','ã','â','à','á','e','é','ê','i','í','ĩ','o','ó','õ','ô','u','ú','ü','ũ'])
-    # vogal_idx = np.array([0,0,0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,4])
     vogal_gra = np.array(["a","á","à","â","ɐ","ã","e","é","ɛ","ê","i","ɪ","ɪ̃","í","ĩ","o","ó","ɔ","ô","õ","u","ú","ü","ʊ","ũ"])
     vogal_idx = np.array([0,0,0,0,0,0,1,1,1,1,2,2,2,2,2,3,3,3,3,3,4,4,4,4,4])
     newTag = ''
@@ -88,9 +85,6 @@ def has_vogal(phono):
     return ret_val
 # -----------------------------------------------------------------------------
 def pos_indicated_vowel(phono, vowel, idTag):
-    # vogal_bas = np.array(['a','e','i','o','u'])
-    
-    # vogal_gra = ('a','ã','â','à','á','e','é','ê','i','í','o','ó','õ','ô','u','ú','ü')
     vogal_pho = np.array(["a","á","à","â","ɐ","ã","e","é","ɛ","ê","i","ɪ","í","ĩ","ɪ̃","o","ó","ɔ","ô","õ","u","ú","ü","ʊ","ũ"])
     tabBasPhono = np.array([[0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 ],
                             [1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 1, 1, 1, 3, 3, 3, 3, 3, 3, 3, 3, 3, 3 ],
@@ -100,17 +94,6 @@ def pos_indicated_vowel(phono, vowel, idTag):
         
     v_pos = np.array([])
     v_dist = np.array([])
-    
-    # for i, g in enumerate(graph):
-    #     if g in vogal_pho:
-    #         g_bas, i_bas = tag_to_bass_vowel(g,idTag)
-    #         try:
-    #             i_pho = (g == vogal_pho).nonzero()[0][0]
-    #             v_pos = np.append(v_pos, i)
-    #             v_dist = np.append(v_dist, tabBasPhono[i_bas,i_pho] )
-    #         except:
-    #             print("Erro find vowel {:}. ID: {:}".format(g,idTag))
-            
     g_bas, i_bas = tag_to_bass_vowel(vowel,idTag)
     for i, g in enumerate(phono):
         if g in vogal_pho:
@@ -154,38 +137,7 @@ def estimate_syllabe_position(phonografico, numSyl, posVogal):
         print("9: Sílaba tónica em posição {:}, diferente da esperada.".format(stressPos))
     
     return returnValue
-    '''
-    if (stressPos == 0):
-        if (posVogal == 0):
-            returnValue = (numSyl - stressPos - 1)
-        
-    elif(stressPos == 1):
-        if (posVogal == 0):
-            returnValue = (numSyl - stressPos - 1)
-        # Para pos tonica:
-        # Exemplos   len   posVogal 2(ultimo no vetor)   posVogal 1(penultimo no vetor)
-        #    3012:    4    4-1 = 3 [len-1 -(2-posVogal)] 4-2 = 2 [len-1 -(2-posVogal)]
-        #     302:    3    3-1 = 2 [len-1 -(2-posVogal)]  X: não tem, não ocorre
-        elif (posVogal < 3):
-            returnValue = (numSyl - 1 - (2-posVogal))
-        # Para pre tonica:
-        elif (posVogal > 2):    
-            returnValue = (numSyl - posVogal + 1 - stressPos)
-            
-    elif(stressPos == 2):
-        if (posVogal == 0):
-            returnValue = (numSyl - stressPos - 1)
-        # Explicação acima
-        elif (posVogal < 3):
-            returnValue = (numSyl - 1 - (2-posVogal))
-        elif (posVogal > 2):    
-            returnValue = (numSyl - posVogal + 1 - stressPos)    
-    else:
-        print("9: Sílaba tónica em posição {:}, diferente da esperada.".format(stressPos))
-    
-    '''
 # -----------------------------------------------------------------------------
-
 
 AUDIO_FOLDER = '../Audios/'
 CSVFILE = './csvDataAudios.csv'
@@ -254,14 +206,7 @@ for idxtg, tgFile in enumerate(textgridfiles):
             tabPalavra = tags[1]
             tabTonicidade = tags[3]
             tabDitongo = is_ditongo(tags[0])
-            # if (len(tags[0]) == 1):
-            #     tabDitongo = 0
-            # elif(len(tags[0]) == 2):
-            #     tabDitongo = 1
-            # else:
-            #     print('3: Tag {:} ID {:} nao se encaixa em vogal ou ditongo!'.format(tags[0],tabId))
-            #     print("3: Arquivo {:} no intervalo entre {:2.3f} e {:2.3f} segundos.".format(Path(tgFile).name,interval[0],interval[1]))
-                
+                            
             selAudio = audio[nIni:nFim]
             form2, _ = format_lpc(selAudio,sr,winstep=valStep,winlen=valWin)
             inten = intensity(selAudio,sr,winstep=valStep,winlen=valWin)
@@ -308,7 +253,6 @@ for idxtg, tgFile in enumerate(textgridfiles):
             tabFonologico = phonSilaba #phonPalavra[vogalPos]
             # TODO:
                 # Nao identifica algumas vogais tipo em " ʧĩ"
-                # nasais aparecem com tamanho 2, tipo "ɪ̃"
             
             hasNasal = False
             idxNasal = []
@@ -368,7 +312,6 @@ for idxtg, tgFile in enumerate(textgridfiles):
                        tabPalavra, tabTonicidade, tabPrecedente, tabSeguinte,tabFechada)
             
             strData = "{:}\n".format(tabData).replace("(","").replace(")","").replace(",","\t")              
-            # COG_1, COG_2, COG_23, LTF = spectral_ratios(selAudio,sr,time_step=valStep)
             # sys.exit("Saida de depuraçao")
             csvLines.append(strData)
             tabId = tabId + 1

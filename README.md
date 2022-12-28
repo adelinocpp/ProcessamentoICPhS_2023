@@ -38,6 +38,40 @@ e-mail: alessandro.bokan@gmail.com
 
 github Pɛtɾʊs PT-BR: https://github.com/alessandrobokan/PETRUS
 
-
 ---
+## Como rodar (testado em Ubuntu 20.20 e Mint 21.3)
 
+Construa o sistema de diretórios
+```
+principal (qualquer diretorio)
+    |-Audios
+        |-Arquivo_audio_01.wav
+        |-Arquivo_audio_01.TextGrid
+        |-Arquivo_audio_02.wav
+        |-Arquivo_audio_02.TextGrid
+        ...
+    |-Processamento (conteudo deste repositório)
+        |-g2p
+        |-stress
+        |-syllables
+        |-utils
+        |-P00_Compute_Vogal_Features_v0.py
+        ...
+```
+Instale o pacote (ainda faço um arquivo re requeriments.txt)
+
+```
+$ pip install Signal_Analysis
+```
+
+Execute no terminal (no dieretório onde está o arquivo P00_Compute_Vogal_Features_v0.py)
+
+```
+$ python3 P00_Compute_Vogal_Features_v0.py
+```
+
+Aguarde gerar o arquivo "csvDataAudios.csv". No caminho aparecem muitas mensagens de falhas, mas a maioria dá certo.
+
+### Observações:
+
+A variável "AUDIO_FOLDER" indica o diretŕorio dos arquivos de áudio e "CSVFILE" o arquivo CSV de saída.
