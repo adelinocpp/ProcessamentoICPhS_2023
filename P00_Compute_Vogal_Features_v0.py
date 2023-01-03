@@ -39,14 +39,56 @@ from utils.formant_lpc import format_lpc, intensity
 from g2p.g2p import G2PTranscriber
 import re
 import warnings
+from unidecode import unidecode
 warnings.filterwarnings("ignore")
+
+abdist = np.genfromtxt ('dst_alfabeto.csv', delimiter=",")
+ab_list=[]
+for i in range(97,123):
+    ab_list.append(chr(i))
 # -----------------------------------------------------------------------------
+'''
+    Retorna a posiçao da vogal marcada na palavra
+''' 
+def pos_vowel_in_word(grafPalavra, vogalPos, mTag):
+    preLetters = 0
+    for i in range(0,vogalPos):
+        preLetters = preLetters + len(grafPalavra[i])
+    pos, valT = find_pos_of_tag(grafPalavra[vogalPos],mTag)
+    return preLetters + pos
+# -----------------------------------------------------------------------------
+''' 
+Calcula a "distancia" (diferença) entre letras do alfabeto em palavra
+com base na tabela do arquivo "dst_alfabeto.csv".
+ajusta algumas semelhanças como:
+    dist_of_letters('u','u') = 0
+    dist_of_letters('u','w') = 0.5
+    dist_of_letters('u','l') = 0.5
+    dist_of_letters('w','l') = 0.75
+    dist_of_letters('i','e') = 0.5
+    dist_of_letters('u','a') = 1
+'''
+def dist_of_letters(L1,L2):
+    idxL1 = ab_list.index(unidecode(L1).lower())
+    idxL2 = ab_list.index(unidecode(L2).lower())
+    return abdist[idxL1,idxL2]
+# -----------------------------------------------------------------------------
+'''
+Calcula a media de uma serie no tamanho percentual do intervalo. 
+Se uma serie x possui tem 50 amostras e deseja-se calcular a media entre o 
+ponto 5 e o 40 utiliza-se:
+    getMeanPercentualInterval(x,0.1,0.8)
+'''
 def getMeanPercentualInterval(variable,pIni,pFim):
     nPoints = len(variable)
     nIni = int(np.floor(pIni*nPoints))
     nFim = int(np.ceil(pFim*nPoints))
     return np.mean(variable[nIni:nFim])
 # -----------------------------------------------------------------------------
+'''
+Recebe uma marcacao que pode ser uma unica vogal ou um ditongo e retorna 
+um valor logico indicando se a marcaçao e ditongo ou nao.
+'''
 def is_ditongo(strVogal):
     vogal_ext = ('a','e','i','o','u','A','E','I','O','U','ã','â','à','á',
                  'Ã','Â','À','Á','é','ê','É','Ê','í','Í','ó','õ','ô','Ó','Õ','Ô',
@@ -57,6 +99,10 @@ def is_ditongo(strVogal):
             strRes = strRes + i
     return int(len(strRes) > 1)
 # -----------------------------------------------------------------------------
+'''
+    Recebe como entrada um caracter de vogal com acentos e retorna o 
+    caracter sem acento e index de identificaçao.
+'''
 def tag_to_bass_vowel(tag, idTag):
     listConsoante = ['b','c','d','f','g','h','j','k','l','m','n','p','q','r',
                      's','t','v','w','x','y','z']
@@ -73,10 +119,34 @@ def tag_to_bass_vowel(tag, idTag):
         idxb = vogal_idx[idxg]
         return vogal_bas[idxb], idxb
     except:
-        print("Erro convert vowel: IDX {:}, {:}. ID: {:}".format(idxg,idxb,idTag))
+        print("Erro convert vowel: TAG {:}. ID: {:}".format(tag,idTag))
         return '0', -1
 # -----------------------------------------------------------------------------
-# percorre uma silaba e tenta identificar se existe uma vogal
+'''
+    Encontra a posiçao de uma marcaçao em um trecho ortografico com base na 
+    "distancia" entre as letras.
+'''
+def find_pos_of_tag(mSilabe,mTag):
+    mSilabe = unidecode(mSilabe).lower()
+    mTag = unidecode(mTag).lower()
+    nSil = len(mSilabe)
+    nTag = len(mTag)
+    if (nTag > nSil):
+        print("Problema com tamanho da marcaçao Silaba: {:}, TAG {:}".format(mSilabe,mTag))
+        return -1, 1
+    vDist = np.zeros((nSil-nTag+1,))
+    for i in range(0,nSil-nTag+1):
+        iDist = 0
+        for j in range(0,nTag):
+            iDist = iDist + dist_of_letters(mSilabe[i+j],mTag[j])/nTag
+        vDist[i] = iDist
+    posT = np.argmin(vDist)
+    valT = np.min(vDist)
+    return posT, valT
+# -----------------------------------------------------------------------------
+'''
+    percorre uma silaba em transcriçao fonetica e tenta identificar se existe uma vogal
+'''
 def has_vogal(phono):
     vogal_gra = np.array(["ɐ","a","á","à","â","ɐ","ã","e","é","ɛ","ê","i","ɪ","ɪ̃","í","ĩ","ĩ","o","ó","ɔ","ô","õ","u","ú","ü","ʊ","ũ"])
     ret_val = False
@@ -117,6 +187,16 @@ def pos_indicated_vowel(phono, vowel, idTag):
         idx = np.argmin(u_dist)
         return int(u_pos[idx])
 # -----------------------------------------------------------------------------
+'''
+Estima a posiçao da silaba na palavra, a partir do inicio (a esquerda) 
+com base na seguinte codificaçao:
+    0: tonica
+    1: pos tonica
+    2: pos pos tonica
+    3: 1a pre-tonica
+    4: 2a pre-tonica
+    ....
+'''
 def estimate_syllabe_position(phonografico, numSyl, posVogal):
     returnValue = -1
     if (len(phonografico) != numSyl):
@@ -157,7 +237,7 @@ list_phon_vowels = ("a", "e", "o", "á", "é", "í", "ó", "ú", "ã", "õ", "â
 list_phon_consonant = ('b','c','d','f','g','h','j','k','l','m','n','p','q','r','s','t','v','w','x','y','z','ʃ', 'ʎ', 'ɲ', 'ɳ', 'ɾ', 'ɣ', 'ʒ', 'ʤ', 'ʧ', 'ŋ')
 
 csvLines = []
-strTitle = "ID, Duração, F1, F2, F1_b, F2_b, intensidade, tag, Posiçao, HNR, Fonetica, Fonologica, Ditongo, Palavra, Tonicidade, Precedente, Seguinte, Fechada\n".replace(",","\t")
+strTitle = "ID, Duração, F1, F2, F1_b, F2_b, intensidade, tag, Posiçao, HNR, Fonetica, Fonologica, Ditongo, Palavra, Tonicidade, Precedente, Seguinte, Fechada, Silabas, Oral, LetraPre, LetraSeg, Sexo, Arquivo\n".replace(",","\t")
 csvLines.append(strTitle)
 useTiers = (0,)
 tabId = 0;
@@ -166,6 +246,8 @@ maxNSyllab = 0
 for idxtg, tgFile in enumerate(textgridfiles):
     value = textgrid_to_interval_matrix(tgFile)    
     sr, audio = wavfile.read(audiofiles[idxtg])
+    tabSexo = tgFile[-15]
+    tabFileName = tgFile.split("/")[-1].split(".")[0]
     if (len(audio.shape) > 1):
         nSamples, nChannel = audio.shape
     else:
@@ -178,8 +260,6 @@ for idxtg, tgFile in enumerate(textgridfiles):
     for j in useTiers:
         intervalMtx = value[j]    
         for idxL, interval in enumerate(intervalMtx):
-            if (tabId == 4):
-                print('Depurando...')
             tabDitongo = 0
             nIni = int(interval[0]*sr)
             nFim = int(interval[1]*sr)
@@ -190,14 +270,34 @@ for idxtg, tgFile in enumerate(textgridfiles):
                 continue
                 
             tags = interval[2].split("-")
+            # --- Trata digito errado
+            if (tags[0].isdigit()):
+                if (tags[0] == '1'):
+                    tags[0] = 'i'
+                elif (tags[0] == '3'):
+                    tags[0] = 'e'
+                elif (tags[0] == '4'):
+                    tags[0] = 'a'
+                else:
+                    tags[0] = 'o'
+            # ----------------------
+            tags[0] = tags[0].replace(" ","")
             
             if not (len(tags) == 5):
                 print("2: Etiqueta {:} ID {:} com problema no número de marcações.".format(interval[2],tabId))
                 print("2: Arquivo {:} no intervalo entre {:2.3f} e {:2.3f} segundos.".format(Path(tgFile).name,interval[0],interval[1]))
                 continue
-            if (int(tags[2]) > maxNSyllab):
-                maxNSyllab = int(tags[2])
-                
+            if (len(tags[2]) > 0):
+                try:
+                    nSib = int(tags[2])
+                    if (nSib > maxNSyllab):
+                        maxNSyllab = nSib
+                except:
+                    print("9: Problema com a TAG 2 como {:} de ID {:} ".format(tags[2],tabId))
+                    continue
+            else:
+                continue
+                    
             tabFonetica = tags[0]
             if (len(tabFonetica) == 1) and (tabFonetica.lower() in listConsoante):
                 print("2: Etiqueta {:} ID {:} apresenta tag que nao e vogal {:}.".format(interval[2],tabId,tabFonetica))
@@ -210,7 +310,11 @@ for idxtg, tgFile in enumerate(textgridfiles):
             selAudio = audio[nIni:nFim]
             form2, _ = format_lpc(selAudio,sr,winstep=valStep,winlen=valWin)
             inten = intensity(selAudio,sr,winstep=valStep,winlen=valWin)
-            tabMeanHNR, _ = get_HNR(selAudio,sr,time_step=valStep,periods_per_window = 1.875)
+            try:
+                tabMeanHNR, _ = get_HNR(selAudio,sr,time_step=valStep,periods_per_window = 1.875)
+            except:
+                tabMeanHNR = 0;
+                continue
             tabIntensity = getMeanPercentualInterval(inten,0.2,0.8)
             if (tabDitongo == 0):
                 tabF1 = getMeanPercentualInterval(form2[0,:],0.2,0.8)
@@ -235,10 +339,14 @@ for idxtg, tgFile in enumerate(textgridfiles):
                 print('4: ID {:}. Problema na silabificação (tag {:}) de \"{:}\" como {:} , {:}'.format(tabId,int(tags[2]),tabPalavra,phonPalavra, grafPalavra))
                 print("4: Arquivo {:} no intervalo entre {:2.3f} e {:2.3f} segundos.".format(Path(tgFile).name,interval[0],interval[1]))
                 continue
-            
-            if (int(tags[4]) >  len(grafPalavra)):
-                print("5: Etiqueta {:} ID {:} com problema. Possicao maior que o numero de silabas".format(interval[2],tabId))
-                print("5: Arquivo {:} no intervalo entre {:2.3f} e {:2.3f} segundos.".format(Path(tgFile).name,interval[0],interval[1]))
+            try:
+                sibPosition = int(tags[4])
+                if (int(tags[4]) >  len(grafPalavra)):
+                    print("5: Etiqueta {:} ID {:} com problema. Possicao maior que o numero de silabas".format(interval[2],tabId))
+                    print("5: Arquivo {:} no intervalo entre {:2.3f} e {:2.3f} segundos.".format(Path(tgFile).name,interval[0],interval[1]))
+                    continue
+            except:
+                print("9: Problema com a TAG 4 como {:} de ID {:} ".format(tags[4],tabId))
                 continue
             
             vogalPos = estimate_syllabe_position(phonPalavra,int(tags[2]),int(tags[4]))
@@ -251,6 +359,7 @@ for idxtg, tgFile in enumerate(textgridfiles):
             phonSilaba = phonPalavra[vogalPos].replace("ˈ","")
             grapSilaba = grafPalavra[vogalPos]
             tabFonologico = phonSilaba #phonPalavra[vogalPos]
+            #phonTrancrib = ''.join(phonPalavra).replace("ˈ","")
             # TODO:
                 # Nao identifica algumas vogais tipo em " ʧĩ"
             
@@ -259,7 +368,6 @@ for idxtg, tgFile in enumerate(textgridfiles):
             if ('͂' in phonSilaba) or ('̃' in phonSilaba):
                 hasNasal = True    
                 oriphonSilaba = phonSilaba
-                # nasalIdx = phonSilaba.find('͂')
                 phonSilaba = phonSilaba.replace('͂','').replace('̃','')
                 print("Tratar as nasais")
                 
@@ -271,22 +379,34 @@ for idxtg, tgFile in enumerate(textgridfiles):
             tabPrecedente = 'NA'
             tabSeguinte = 'NA'
             if (tabDitongo):
-                vogLen = len(grapSilaba)-1
+                vogLen = len(tags[0])
                 pos = grapSilaba.find(tags[0])
-                if (pos == 0) and (len(phonSilaba) == vogLen+1):
+                if (pos == -1):
+                    pos, valT = find_pos_of_tag(grapSilaba,tags[0])
+                elif (pos == -1):
+                    print("13: Problema na detecçao da tag ID {:}".format(tabId))
+                    continue
+                if (pos == 0) and (len(phonSilaba) == vogLen):
                     tabPrecedente = 'NA'
                     tabSeguinte = 'NA'
-                if (pos == 0) and (len(phonSilaba) > vogLen+1):
+                if (pos == 0) and (len(phonSilaba) > vogLen):
                     tabPrecedente = 'NA'
                     tabSeguinte = phonSilaba[1]
-                if (pos > 0) and (len(phonSilaba) == (pos+vogLen+1)):
+                if (pos > 0) and (len(phonSilaba) == (pos+vogLen)):
                     tabPrecedente = phonSilaba[pos-1]
                     tabSeguinte = 'NA'
-                if (pos > 0) and (len(phonSilaba) > (pos+vogLen+1)):
+                if (pos > 0) and (len(phonSilaba) > (pos+vogLen)):
                     tabPrecedente = phonSilaba[pos-1]
                     tabSeguinte = phonSilaba[pos+1]
             else:
+                if (hasNasal):
+                    print('Depurando...')
                 pos = pos_indicated_vowel(phonSilaba, tags[0], tabId)
+                if (pos == -1):
+                    pos, valT = find_pos_of_tag(grapSilaba,tags[0])
+                elif (pos == -1):
+                    print("13: Problema na detecçao da tag ID {:}".format(tabId))
+                    continue
                 # pos = grapSilaba.find(tags[0])
                 if (pos == 0) and (len(phonSilaba) == 1):
                     tabPrecedente = 'NA'
@@ -301,17 +421,62 @@ for idxtg, tgFile in enumerate(textgridfiles):
                     tabPrecedente = phonSilaba[pos-1]
                     tabSeguinte = phonSilaba[pos+1]
             
+            
+            
+            tabLetraPre = 'NA'
+            tabLetraSeg = 'NA'
+            # if (tabId == 10):
+            #     print('Depurando...')
+            if (tabDitongo):
+                vogLen = len(tags[0])
+                pos = tabPalavra.find(tags[0])
+                if (pos == -1):
+                    pos, valT = find_pos_of_tag(tabPalavra,tags[0])
+                elif (pos == -1):
+                    print("13: Problema na detecçao da tag ID {:}".format(tabId))
+                    continue
+                if (pos == 0) and (len(tabPalavra) == vogLen):
+                    tabLetraPre = 'NA'
+                    tabLetraSeg = 'NA'
+                if (pos == 0) and (len(tabPalavra) > vogLen):
+                    tabLetraPre = 'NA'
+                    tabLetraSeg = tabPalavra[pos+vogLen]
+                if (pos > 0) and (len(tabPalavra) == (pos+vogLen)):
+                    tabLetraPre = tabPalavra[pos-1]
+                    tabLetraSeg = 'NA'
+                if (pos > 0) and (len(tabPalavra) > (pos+vogLen)):
+                    tabLetraPre = tabPalavra[pos-1]
+                    tabLetraSeg = tabPalavra[pos+vogLen]
+            else:
+                pos = pos_vowel_in_word(grafPalavra, vogalPos, tags[0])
+                if (pos == 0) and (len(grafPalavra) == 1):
+                    tabLetraPre = 'NA'
+                    tabLetraSeg = 'NA'
+                if (pos == 0) and (len(tabPalavra) > 1):
+                    tabLetraPre = 'NA'
+                    tabLetraSeg = tabPalavra[pos+1]
+                if (pos > 0) and (len(tabPalavra) == (pos+1)):
+                    tabLetraPre = tabPalavra[pos-1]
+                    tabLetraSeg = 'NA'
+                if (pos > 0) and (len(tabPalavra) > (pos+1)):
+                    tabLetraPre = tabPalavra[pos-1]
+                    tabLetraSeg = tabPalavra[pos+1]
+                    
             if (hasNasal):
                 print("recolocar a nasal")
                 phonSilaba = oriphonSilaba
                 
+            # TODO: Retirar redundancia de tabOral e hasNasal
+            tabOral = int((not hasNasal))
             tabFechada = int((grapSilaba[-1] in listConsoante))
             tabData = (tabId,tabDuration, tabF1,tabF2,tabF1_b,tabF2_b,tabIntensity,
                        interval[2],vogalPos,
                        tabMeanHNR, tabFonetica,tabFonologico, tabDitongo, 
-                       tabPalavra, tabTonicidade, tabPrecedente, tabSeguinte,tabFechada)
+                       tabPalavra, tabTonicidade, tabPrecedente, tabSeguinte,tabFechada,
+                       nSib, tabOral, tabLetraPre, tabLetraSeg,
+                       tabSexo,tabFileName)
             
-            strData = "{:}\n".format(tabData).replace("(","").replace(")","").replace(",","\t")              
+            strData = "{:}\n".format(tabData).replace("(","").replace(")","").replace(" ","").replace(",","\t")
             # sys.exit("Saida de depuraçao")
             csvLines.append(strData)
             tabId = tabId + 1

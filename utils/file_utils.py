@@ -190,9 +190,13 @@ def textgrid_to_interval_matrix(filename, anyLabel=1, labelValue="", convertNumb
             nIntervals = int(TextGridLines[initLine + 5].split("= ")[1])
             newTier = []
             for i in range(initLine + 6,initLine + 6 + 4*nIntervals,4):
-                itv_xmin = float(TextGridLines[i+1].split("= ")[1])
-                itv_xmax = float(TextGridLines[i+2].split("= ")[1])
-                itv_textT = TextGridLines[i+3].split("= ")[1].strip().replace('"','')
+                try:
+                    itv_xmin = float(TextGridLines[i+1].split("= ")[1])
+                    itv_xmax = float(TextGridLines[i+2].split("= ")[1])
+                    itv_textT = TextGridLines[i+3].split("= ")[1].strip().replace('"','')
+                except:
+                    print("read textgrid exceptiom")
+                    continue
                 insertValue = True
                 if (anyLabel == 0) and (itv_textT != labelValue): 
                     insertValue = False  
