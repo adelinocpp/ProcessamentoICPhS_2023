@@ -473,7 +473,7 @@ for idxtg, tgFile in enumerate(textgridfiles):
                        interval[2],vogalPos,
                        tabMeanHNR, tabFonetica,tabFonologico, tabDitongo, 
                        tabPalavra, tabTonicidade, tabPrecedente, tabSeguinte,tabFechada,
-                       nSib, tabOral, tabLetraPre, tabLetraSeg,
+                       nSib, tabOral, tabLetraPre.lower(), tabLetraSeg.lower(),
                        tabSexo,tabFileName)
             
             strData = "{:}\n".format(tabData).replace("(","").replace(")","").replace(" ","").replace(",","\t")
